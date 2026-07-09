@@ -1,7 +1,5 @@
 const SESSION_KEY = "resume-ai-auth-session";
 
-const firebaseConfig = window.RESUME_AI_FIREBASE_CONFIG || null;
-
 let authContext = null;
 
 export async function initializeAuth({ onSignedIn, onSignedOut, onError }) {
@@ -15,7 +13,8 @@ export async function initializeAuth({ onSignedIn, onSignedOut, onError }) {
   }
 
   return {
-    signIn: () => signInWithGoogle({ onSignedIn, onError }),
+    signIn: (credentials) => signInWithPassword({ credentials, onSignedIn, onError }),
+    signUp: (details) => signUpWithBackend({ details, onSignedIn, onError }),
     signOut: () => signOut({ onSignedOut })
   };
 }
@@ -45,11 +44,41 @@ export async function companyScopedFetch(path, options = {}) {
   });
 }
 
-async function signInWithGoogle({ onSignedIn, onError }) {
+async function signInWithPassword({ credentials, onSignedIn, onError }) {
   try {
-    const context = firebaseConfig
-      ? await signInWithFirebase()
-      : await signInWithLocalDemoSession();
+    const context = await loginWithBackend(credentials);
+
+    authContext = context;
+    localStorage.setItem(SESSION_KEY, JSON.stringify(context));
+    onSignedIn(context);
+  } catch (error) {
+    onError(error);
+  }
+}
+
+async function signUpWithBackend({ details, onSignedIn, onError }) {
+  try {
+    if (details.password !== details.confirmPassword) {
+      throw new Error("Passwords do not match.");
+    }
+
+    const response = await fetch("/api/auth/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        companyName: details.companyName,
+        username: details.username,
+        password: details.password
+      })
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      throw new Error(errorBody.message || "Could not create workspace. Please try again.");
+    }
+
+    const data = await response.json();
+    const context = toAuthContext(data, details.username);
 
     authContext = context;
     localStorage.setItem(SESSION_KEY, JSON.stringify(context));
@@ -65,49 +94,39 @@ async function signOut({ onSignedOut }) {
   onSignedOut();
 }
 
-async function signInWithFirebase() {
-  const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js");
-  const {
-    getAuth,
-    GoogleAuthProvider,
-    signInWithPopup
-  } = await import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js");
+async function loginWithBackend({ username, password }) {
+  if (!username || !password) {
+    throw new Error("Username and password are required.");
+  }
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: "select_account" });
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
+  });
 
-  const result = await signInWithPopup(auth, provider);
-  const tokenResult = await result.user.getIdTokenResult(true);
-  const companyId = tokenResult.claims.companyId;
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody.message || "Invalid username or password.");
+  }
 
-  if (!companyId) {
-    throw new Error("This Google account is not assigned to a company workspace.");
+  const data = await response.json();
+  return toAuthContext(data, username);
+}
+
+function toAuthContext(data, fallbackUsername) {
+  if (!data.companyId) {
+    throw new Error("This account is not assigned to a company workspace.");
   }
 
   return {
-    uid: result.user.uid,
-    name: result.user.displayName || "HR user",
-    email: result.user.email,
-    photoURL: result.user.photoURL,
-    companyId,
-    companyName: tokenResult.claims.companyName || companyId,
-    idToken: tokenResult.token,
-    authProvider: "firebase-google"
-  };
-}
-
-async function signInWithLocalDemoSession() {
-  return {
-    uid: "demo-hr-user",
-    name: "Demo HR",
-    email: "hr@demo-company.com",
-    photoURL: "",
-    companyId: "demo-company",
-    companyName: "Demo Company",
-    idToken: "local-dev-token",
-    authProvider: "local-demo"
+    uid: data.uid,
+    name: data.name || "HR user",
+    email: data.email || fallbackUsername,
+    companyId: data.companyId,
+    companyName: data.companyName || data.companyId,
+    idToken: data.idToken,
+    authProvider: "username-password"
   };
 }
 

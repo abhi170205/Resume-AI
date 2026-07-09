@@ -1,23 +1,156 @@
-import { analyzeResume, askResumeQuestion, rankResumes } from "./api.js";
-import { initializeAuth } from "./auth.js";
+server.mjs
+import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
+import { extname, join, normalize } from "node:path";
 
-const app = document.querySelector("#app");
-const authGate = document.querySelector("#authGate");
-const signupGate = document.querySelector("#signupGate");
-const loginForm = document.querySelector("#loginForm");
-const usernameInput = document.querySelector("#usernameInput");
-const passwordInput = document.querySelector("#passwordInput");
-const showSignupBtn = document.querySelector("#showSignupBtn");
-const showLoginBtn = document.querySelector("#showLoginBtn");
-const signupForm = document.querySelector("#signupForm");
-const signupCompanyName = document.querySelector("#signupCompanyName");
-const signupUsernameInput = document.querySelector("#signupUsernameInput");
-const signupPasswordInput = document.querySelector("#signupPasswordInput");
-const signupConfirmPasswordInput = document.querySelector("#signupConfirmPasswordInput");
-const signOutBtn = document.querySelector("#signOutBtn");
-const authError = document.querySelector("#authError");
-const signupError = document.querySelector("#signupError");
-const companyBadge = document.querySelector("#companyBadge");
+const port = Number(process.env.PORT || 4173);
+const root = process.cwd();
+
+const mimeTypes = {
+  ".html": "text/html; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".svg": "image/svg+xml"
+};
+
+createServer(async (request, response) => {
+  const url = new URL(request.url || "/", `http://localhost:${port}`);
+  const requestedPath = url.pathname === "/" ? "/index.html" : url.pathname;
+  const filePath = normalize(join(root, requestedPath));
+
+  if (!filePath.startsWith(root)) {
+    response.writeHead(403);
+    response.end("Forbidden");
+    return;
+  }
+
+  try {
+    const body = await readFile(filePath);
+    response.writeHead(200, {
+      "Content-Type": mimeTypes[extname(filePath)] || "application/octet-stream"
+    });
+    response.end(body);
+  } catch {
+    response.writeHead(404);
+    response.end("Not found");
+  }
+}).listen(port, () => {
+  console.log(`Resume UI running at http://localhost:${port}`);
+});
+
+
+api.js
+export async function analyzeResume(files) {
+  await wait(450);
+
+  const names = files.length
+    ? files.map((file) => file.name.replace(/\.[^/.]+$/, ""))
+    : ["Aarav Mehta", "Nisha Rao", "Kabir Sharma"];
+
+  return names.map((name, index) => buildCandidate(name, index));
+}
+
+export async function askResumeQuestion({ question, selectedRegion, activeResume }) {
+  await wait(250);
+
+  const scope = selectedRegion ? selectedRegion.title : "the full resume";
+  return {
+    role: "assistant",
+    text: `Based on ${scope}, ${activeResume.name} looks strongest where the resume shows measurable ownership. For: "${question}", I would ask the backend LLM to verify evidence, compare it with the role requirements, and flag any unsupported claims.`
+  };
+}
+
+export async function rankResumes(resumes, rankingMode) {
+  await wait(200);
+
+  const scoreKeyByMode = {
+    overall: "overall",
+    ats: "ats",
+    skills: "skills",
+    experience: "experience",
+    impact: "impact",
+    risk: "risk"
+  };
+
+  const scoreKey = scoreKeyByMode[rankingMode] || "overall";
+  return [...resumes].sort((a, b) => b.scores[scoreKey] - a.scores[scoreKey]);
+}
+
+function buildCandidate(name, index) {
+  const base = [
+    {
+      name,
+      title: "Senior Frontend Engineer",
+      ats: 88,
+      scores: { overall: 91, ats: 88, skills: 94, experience: 90, impact: 89, risk: 82 },
+      insights: [
+        "Strong React and TypeScript alignment with the target role.",
+        "Good evidence of performance ownership and design system work.",
+        "Needs deeper validation on backend collaboration and team leadership scope."
+      ]
+    },
+    {
+      name,
+      title: "Product Engineer",
+      ats: 81,
+      scores: { overall: 84, ats: 81, skills: 86, experience: 83, impact: 87, risk: 78 },
+      insights: [
+        "Balanced product and engineering profile with clear feature ownership.",
+        "Impact metrics are credible but should be checked against project scale.",
+        "May need ramp-up for advanced frontend architecture responsibilities."
+      ]
+    },
+    {
+      name,
+      title: "Frontend Developer",
+      ats: 74,
+      scores: { overall: 78, ats: 74, skills: 80, experience: 76, impact: 72, risk: 84 },
+      insights: [
+        "Solid implementation profile with a clean technical foundation.",
+        "Lower seniority signal compared with the target role.",
+        "Good low-risk backup candidate if senior candidates are unavailable."
+      ]
+    }
+  ];
+
+  const candidate = base[index % base.length];
+
+  return {
+    id: crypto.randomUUID(),
+    ...candidate,
+    sections: [
+      {
+        title: "Summary",
+        text: `${candidate.title} with experience building responsive dashboards, reusable component systems, and data-heavy workflows for business teams.`
+      },
+      {
+        title: "Experience",
+        text: "Led delivery of a hiring analytics dashboard, reduced review time by 32%, and collaborated with backend teams on API contracts and data validation."
+      },
+      {
+        title: "Skills",
+        text: "React, TypeScript, JavaScript, HTML, CSS, accessibility, design systems, REST APIs, testing, performance tuning."
+      },
+      {
+        title: "Projects",
+        text: "Built an AI-assisted document review tool with upload parsing, scoring views, prompt workflows, and recruiter decision summaries."
+      },
+      {
+        title: "Education",
+        text: "Bachelor's degree in Computer Science with coursework in software engineering, databases, and human-computer interaction."
+      }
+    ]
+  };
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+app.js
+import { analyzeResume, askResumeQuestion, rankResumes } from "./api.js";
+
 const uploadPage = document.querySelector("#uploadPage");
 const reviewPage = document.querySelector("#reviewPage");
 const uploadForm = document.querySelector("#uploadForm");
@@ -60,49 +193,6 @@ let resumes = [];
 let activeResume = null;
 let selectedRegion = null;
 let messages = [];
-let authControls = null;
-
-authControls = await initializeAuth({
-  onSignedIn: showAppForCompany,
-  onSignedOut: showAuthGate,
-  onError: showAuthError
-});
-
-loginForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  authError.classList.add("hidden");
-  authControls.signIn({
-    username: usernameInput.value.trim(),
-    password: passwordInput.value
-  });
-});
-
-signupForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  signupError.classList.add("hidden");
-  authControls.signUp({
-    companyName: signupCompanyName.value.trim(),
-    username: signupUsernameInput.value.trim(),
-    password: signupPasswordInput.value,
-    confirmPassword: signupConfirmPasswordInput.value
-  }).catch((error) => showSignupError(error));
-});
-
-showSignupBtn.addEventListener("click", () => {
-  authGate.classList.add("hidden");
-  signupGate.classList.remove("hidden");
-  signupError.classList.add("hidden");
-});
-
-showLoginBtn.addEventListener("click", () => {
-  signupGate.classList.add("hidden");
-  authGate.classList.remove("hidden");
-  authError.classList.add("hidden");
-});
-
-signOutBtn.addEventListener("click", () => {
-  authControls.signOut();
-});
 
 resumeInput.addEventListener("change", renderFileList);
 uploadForm.addEventListener("submit", handleUpload);
@@ -197,34 +287,6 @@ function showUploadPage() {
   reviewPage.classList.add("hidden");
   reviewPage.classList.remove("grid");
   uploadPage.classList.remove("hidden");
-}
-
-function showAppForCompany(context) {
-  authGate.classList.add("hidden");
-  signupGate.classList.add("hidden");
-  app.classList.remove("hidden");
-  companyBadge.textContent = context.companyName || context.companyId;
-  companyBadge.classList.remove("hidden");
-}
-
-function showAuthGate() {
-  app.classList.add("hidden");
-  signupGate.classList.add("hidden");
-  authGate.classList.remove("hidden");
-  companyBadge.classList.add("hidden");
-  loginForm.reset();
-  signupForm.reset();
-  showUploadPage();
-}
-
-function showAuthError(error) {
-  authError.textContent = error.message || "Sign-in failed. Please check your credentials and try again.";
-  authError.classList.remove("hidden");
-}
-
-function showSignupError(error) {
-  signupError.textContent = error.message || "Could not create workspace. Please try again.";
-  signupError.classList.remove("hidden");
 }
 
 function renderAll() {

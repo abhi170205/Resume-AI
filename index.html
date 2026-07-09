@@ -44,14 +44,14 @@
                 Resume AI with private company workspaces.
               </h1>
               <p class="mt-5 max-w-md text-lg leading-8 text-white/80">
-                Sign in with Google. The app loads only the company workspace attached
-                to the HR user's verified account.
+                Sign in with your HR credentials. The app loads only the company
+                workspace attached to your account.
               </p>
             </div>
             <div class="grid grid-cols-3 gap-3 max-[560px]:grid-cols-1">
               <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl">
-                <strong class="block">Google SSO</strong>
-                <span class="mt-1 block text-sm text-white/70">No shared passwords.</span>
+                <strong class="block">Credential login</strong>
+                <span class="mt-1 block text-sm text-white/70">Username and password.</span>
               </div>
               <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl">
                 <strong class="block">Company claim</strong>
@@ -69,18 +69,46 @@
           <p class="mb-2 text-xs font-black uppercase text-blue-600">Resume AI Login</p>
           <h2 class="text-3xl font-black leading-tight text-slate-950">Continue as HR</h2>
           <p class="mt-3 leading-7 text-slate-600">
-            Use your company Google account. Personal accounts should not be granted
-            a company workspace.
+            Use your company-issued username and password. Shared or personal
+            credentials should not be granted a company workspace.
           </p>
 
-          <button
-            id="googleSignInBtn"
-            class="mt-7 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 font-extrabold text-slate-950 shadow-soft transition hover:-translate-y-0.5 hover:border-blue-300"
-            type="button"
-          >
-            <span class="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-blue-600 to-teal-500 text-white">G</span>
-            Sign in with Google
-          </button>
+          <form id="loginForm" class="mt-7 grid gap-4">
+            <label class="grid gap-2">
+              <span class="text-slate-500">Username</span>
+              <input
+                id="usernameInput"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                type="text"
+                autocomplete="username"
+                required
+              />
+            </label>
+
+            <label class="grid gap-2">
+              <span class="text-slate-500">Password</span>
+              <input
+                id="passwordInput"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                type="password"
+                autocomplete="current-password"
+                required
+              />
+            </label>
+
+            <button
+              class="mt-1 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 font-extrabold text-slate-950 shadow-soft transition hover:-translate-y-0.5 hover:border-blue-300"
+              type="submit"
+            >
+              <span class="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-blue-600 to-teal-500 text-white">→</span>
+              Sign in
+            </button>
+          </form>
+
+          <p class="mt-5 text-center text-slate-600">
+            New company?
+            <button id="showSignupBtn" class="font-extrabold text-blue-600 underline-offset-2 hover:underline" type="button">Create a workspace</button>
+          </p>
 
           <div id="authError" class="mt-4 hidden rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700"></div>
 
@@ -91,6 +119,112 @@
               verified auth claims. Do not trust client-only company selection.
             </p>
           </div>
+        </div>
+      </article>
+    </section>
+
+    <section
+      id="signupGate"
+      class="hidden min-h-screen place-items-center bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.16),transparent_34rem),radial-gradient(circle_at_top_right,rgba(15,159,142,0.13),transparent_28rem),#f7f8fc] p-5"
+    >
+      <article class="grid w-[min(980px,100%)] grid-cols-[1.05fr_0.95fr] overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-lift max-[820px]:grid-cols-1">
+        <div class="relative min-h-[520px] bg-[linear-gradient(135deg,rgba(16,24,40,0.96),rgba(37,99,235,0.88),rgba(15,159,142,0.78))] p-10 text-white max-[820px]:min-h-0">
+          <div class="absolute inset-0 bg-[linear-gradient(45deg,rgba(255,255,255,0.10)_25%,transparent_25%_50%,rgba(255,255,255,0.08)_50%_75%,transparent_75%)] bg-[length:42px_42px]"></div>
+          <div class="relative flex h-full flex-col justify-between gap-16">
+            <p class="text-xs font-black uppercase text-white/70">First HR user creates the workspace</p>
+            <div>
+              <h1 class="text-[clamp(34px,5vw,58px)] font-black leading-none">
+                Set up your company's private workspace.
+              </h1>
+              <p class="mt-5 max-w-md text-lg leading-8 text-white/80">
+                A company workspace is created once. Additional HR teammates
+                should be invited by an admin rather than signing up again.
+              </p>
+            </div>
+            <div class="grid grid-cols-3 gap-3 max-[560px]:grid-cols-1">
+              <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl">
+                <strong class="block">One-time setup</strong>
+                <span class="mt-1 block text-sm text-white/70">Company folder created once.</span>
+              </div>
+              <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl">
+                <strong class="block">Isolated data</strong>
+                <span class="mt-1 block text-sm text-white/70">Only your HR team can access it.</span>
+              </div>
+              <div class="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-xl">
+                <strong class="block">DB rules</strong>
+                <span class="mt-1 block text-sm text-white/70">Privacy enforced server-side.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col justify-center p-8">
+          <p class="mb-2 text-xs font-black uppercase text-blue-600">Resume AI Signup</p>
+          <h2 class="text-3xl font-black leading-tight text-slate-950">Create your workspace</h2>
+          <p class="mt-3 leading-7 text-slate-600">
+            This registers your company and creates the first HR admin account.
+          </p>
+
+          <form id="signupForm" class="mt-7 grid gap-4">
+            <label class="grid gap-2">
+              <span class="text-slate-500">Company name</span>
+              <input
+                id="signupCompanyName"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                type="text"
+                autocomplete="organization"
+                required
+              />
+            </label>
+
+            <label class="grid gap-2">
+              <span class="text-slate-500">Username</span>
+              <input
+                id="signupUsernameInput"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                type="text"
+                autocomplete="username"
+                required
+              />
+            </label>
+
+            <label class="grid gap-2">
+              <span class="text-slate-500">Password</span>
+              <input
+                id="signupPasswordInput"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                type="password"
+                autocomplete="new-password"
+                required
+              />
+            </label>
+
+            <label class="grid gap-2">
+              <span class="text-slate-500">Confirm password</span>
+              <input
+                id="signupConfirmPasswordInput"
+                class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                type="password"
+                autocomplete="new-password"
+                required
+              />
+            </label>
+
+            <button
+              class="mt-1 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 font-extrabold text-slate-950 shadow-soft transition hover:-translate-y-0.5 hover:border-blue-300"
+              type="submit"
+            >
+              <span class="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-blue-600 to-teal-500 text-white">+</span>
+              Create workspace
+            </button>
+          </form>
+
+          <p class="mt-5 text-center text-slate-600">
+            Already have a workspace?
+            <button id="showLoginBtn" class="font-extrabold text-blue-600 underline-offset-2 hover:underline" type="button">Sign in</button>
+          </p>
+
+          <div id="signupError" class="mt-4 hidden rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700"></div>
         </div>
       </article>
     </section>
@@ -268,8 +402,6 @@
       </section>
     </main>
 
-    <!-- Production: create src/firebase-config.js from src/firebase-config.example.js and load it here. -->
-    <!-- <script src="src/firebase-config.js"></script> -->
     <script type="module" src="src/app.js"></script>
   </body>
 </html>
