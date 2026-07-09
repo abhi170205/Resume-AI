@@ -1,5 +1,8 @@
+import { companyScopedFetch, getCompanyId } from "./auth.js";
+
 export async function analyzeResume(files) {
   await wait(450);
+  const companyId = getCompanyId();
 
   const names = files.length
     ? files.map((file) => file.name.replace(/\.[^/.]+$/, ""))
@@ -10,6 +13,7 @@ export async function analyzeResume(files) {
 
 export async function askResumeQuestion({ question, selectedRegion, activeResume }) {
   await wait(250);
+  getCompanyId();
 
   const scope = selectedRegion ? selectedRegion.title : "the full resume";
   return {
@@ -20,6 +24,7 @@ export async function askResumeQuestion({ question, selectedRegion, activeResume
 
 export async function rankResumes(resumes, rankingMode) {
   await wait(200);
+  getCompanyId();
 
   const scoreKeyByMode = {
     overall: "overall",
@@ -32,6 +37,22 @@ export async function rankResumes(resumes, rankingMode) {
 
   const scoreKey = scoreKeyByMode[rankingMode] || "overall";
   return [...resumes].sort((a, b) => b.scores[scoreKey] - a.scores[scoreKey]);
+}
+
+export async function analyzeResumeWithBackend(files) {
+  const formData = new FormData();
+  files.forEach((file) => formData.append("resumes", file));
+
+  const response = await companyScopedFetch("/api/resumes/analyze", {
+    method: "POST",
+    body: formData
+  });
+
+  if (!response.ok) {
+    throw new Error("Resume analysis failed.");
+  }
+
+  return response.json();
 }
 
 function buildCandidate(name, index) {

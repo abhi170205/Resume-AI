@@ -1,5 +1,12 @@
 import { analyzeResume, askResumeQuestion, rankResumes } from "./api.js";
+import { initializeAuth } from "./auth.js";
 
+const app = document.querySelector("#app");
+const authGate = document.querySelector("#authGate");
+const googleSignInBtn = document.querySelector("#googleSignInBtn");
+const signOutBtn = document.querySelector("#signOutBtn");
+const authError = document.querySelector("#authError");
+const companyBadge = document.querySelector("#companyBadge");
 const uploadPage = document.querySelector("#uploadPage");
 const reviewPage = document.querySelector("#reviewPage");
 const uploadForm = document.querySelector("#uploadForm");
@@ -42,6 +49,22 @@ let resumes = [];
 let activeResume = null;
 let selectedRegion = null;
 let messages = [];
+let authControls = null;
+
+authControls = await initializeAuth({
+  onSignedIn: showAppForCompany,
+  onSignedOut: showAuthGate,
+  onError: showAuthError
+});
+
+googleSignInBtn.addEventListener("click", () => {
+  authError.classList.add("hidden");
+  authControls.signIn();
+});
+
+signOutBtn.addEventListener("click", () => {
+  authControls.signOut();
+});
 
 resumeInput.addEventListener("change", renderFileList);
 uploadForm.addEventListener("submit", handleUpload);
@@ -136,6 +159,25 @@ function showUploadPage() {
   reviewPage.classList.add("hidden");
   reviewPage.classList.remove("grid");
   uploadPage.classList.remove("hidden");
+}
+
+function showAppForCompany(context) {
+  authGate.classList.add("hidden");
+  app.classList.remove("hidden");
+  companyBadge.textContent = context.companyName || context.companyId;
+  companyBadge.classList.remove("hidden");
+}
+
+function showAuthGate() {
+  app.classList.add("hidden");
+  authGate.classList.remove("hidden");
+  companyBadge.classList.add("hidden");
+  showUploadPage();
+}
+
+function showAuthError(error) {
+  authError.textContent = error.message || "Google sign-in failed. Please try again.";
+  authError.classList.remove("hidden");
 }
 
 function renderAll() {
