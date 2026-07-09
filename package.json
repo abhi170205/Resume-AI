@@ -1,0 +1,19 @@
+{
+  "name": "resume-llm-review-ui",
+  "version": "1.0.0",
+  "description": "Frontend UI for HR resume upload, ATS scoring, LLM review, region-specific Q&A, and resume ranking.",
+  "private": true,
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node server.mjs"
+  },
+  "keywords": [
+    "resume",
+    "ats",
+    "llm",
+    "hr",
+    "frontend"
+  ],
+  "author": "",
+  "license": "MIT"
+}

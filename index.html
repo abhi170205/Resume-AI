@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resume LLM Review UI</title>
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <main id="app">
+      <section id="uploadPage" class="page upload-page">
+        <nav class="topbar">
+          <div>
+            <p class="eyebrow">HR Review Console</p>
+            <h1>Resume intelligence workspace</h1>
+          </div>
+          <span class="status-pill">LLM backend ready</span>
+        </nav>
+
+        <section class="upload-layout">
+          <div class="intro-panel">
+            <h2>Upload resumes, score them, then ask sharper questions.</h2>
+            <p>
+              Built for recruiters who need fast ATS checks, LLM-backed resume review,
+              candidate comparison, and section-specific Q&A.
+            </p>
+            <div class="feature-grid">
+              <div>
+                <strong>ATS baseline</strong>
+                <span>Role fit, keyword coverage, structure, clarity.</span>
+              </div>
+              <div>
+                <strong>Region Q&A</strong>
+                <span>Click any resume block and ask about that exact part.</span>
+              </div>
+              <div>
+                <strong>Ranking view</strong>
+                <span>Compare candidates by skills, impact, seniority, and risk.</span>
+              </div>
+            </div>
+          </div>
+
+          <form id="uploadForm" class="upload-card">
+            <label for="resumeInput" class="drop-zone" id="dropZone">
+              <input
+                id="resumeInput"
+                type="file"
+                multiple
+                accept=".pdf,.doc,.docx,.txt,.rtf,.odt"
+              />
+              <span class="upload-icon">+</span>
+              <strong>Drop resumes here or browse files</strong>
+              <small>Supported: PDF, DOC, DOCX, TXT, RTF, ODT</small>
+            </label>
+
+            <div id="fileList" class="file-list" aria-live="polite"></div>
+
+            <label class="field">
+              <span>Target role</span>
+              <input id="targetRole" type="text" value="Senior Frontend Engineer" />
+            </label>
+
+            <label class="field">
+              <span>Hiring priority</span>
+              <select id="priority">
+                <option value="balanced">Balanced evaluation</option>
+                <option value="skills">Strongest skills match</option>
+                <option value="leadership">Leadership potential</option>
+                <option value="risk">Lowest hiring risk</option>
+              </select>
+            </label>
+
+            <button class="primary-btn" type="submit">Analyze resumes</button>
+          </form>
+        </section>
+      </section>
+
+      <section id="reviewPage" class="page review-page hidden">
+        <aside class="sidebar">
+          <div>
+            <button id="backBtn" class="ghost-btn" type="button">Back</button>
+            <p class="eyebrow">Candidate Queue</p>
+            <h2>Resume ranking</h2>
+          </div>
+
+          <label class="field">
+            <span>Rank by</span>
+            <select id="rankingMode">
+              <option value="overall">Best overall</option>
+              <option value="ats">ATS score</option>
+              <option value="skills">Skills match</option>
+              <option value="experience">Relevant experience</option>
+              <option value="impact">Measurable impact</option>
+              <option value="risk">Lowest risk</option>
+            </select>
+          </label>
+
+          <div id="candidateList" class="candidate-list"></div>
+        </aside>
+
+        <section class="workspace">
+          <header class="workspace-header">
+            <div>
+              <p class="eyebrow">Resume Analysis</p>
+              <h1 id="candidateName">Candidate</h1>
+            </div>
+            <div class="score-ring" aria-label="ATS score">
+              <span id="atsScore">0</span>
+              <small>ATS</small>
+            </div>
+          </header>
+
+          <section class="score-grid" id="scoreGrid"></section>
+
+          <section class="review-split">
+            <article class="resume-panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Resume preview</h2>
+                  <p>Click any section to focus the prompt on that region.</p>
+                </div>
+                <button id="clearRegionBtn" class="ghost-btn" type="button">Clear region</button>
+              </div>
+              <div id="resumePreview" class="resume-preview"></div>
+            </article>
+
+            <article class="insights-panel">
+              <div class="panel-header">
+                <div>
+                  <h2>LLM review</h2>
+                  <p>Backend-ready summary for shortlist decisions.</p>
+                </div>
+              </div>
+              <div id="llmInsights" class="insight-list"></div>
+
+              <div class="selected-region">
+                <span>Selected region</span>
+                <strong id="selectedRegionLabel">None selected</strong>
+                <p id="selectedRegionText">Click a section in the resume to ask about that exact content.</p>
+              </div>
+            </article>
+          </section>
+        </section>
+
+        <form id="promptBar" class="prompt-bar">
+          <div class="prompt-context">
+            <span id="promptScope">Scope: full resume</span>
+          </div>
+          <input
+            id="promptInput"
+            type="text"
+            placeholder="Ask the LLM about shortlist fit, missing skills, risk, or the selected resume region..."
+          />
+          <button class="primary-btn" type="submit">Ask</button>
+        </form>
+      </section>
+    </main>
+
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
