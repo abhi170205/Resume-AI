@@ -21,6 +21,23 @@ const backBtn = document.querySelector("#backBtn");
 const clearRegionBtn = document.querySelector("#clearRegionBtn");
 const dropZone = document.querySelector("#dropZone");
 
+const dropActiveClasses = [
+  "border-blue-500",
+  "bg-blue-50",
+  "shadow-[0_0_0_4px_rgba(37,99,235,0.12)]",
+  "-translate-y-0.5"
+];
+
+const cardBase =
+  "w-full grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border bg-white p-3.5 text-left shadow-soft transition hover:-translate-y-0.5";
+const cardActive = "border-blue-600 shadow-[0_0_0_4px_rgba(37,99,235,0.12)]";
+const cardInactive = "border-slate-200";
+const resumeSectionBase =
+  "w-full rounded-2xl border bg-white p-4 text-left transition hover:-translate-y-0.5 hover:border-blue-600 hover:shadow-soft";
+const resumeSectionActive =
+  "border-blue-600 shadow-[0_0_0_4px_rgba(37,99,235,0.15),inset_0_0_0_2px_rgba(37,99,235,0.10)]";
+const resumeSectionInactive = "border-slate-200";
+
 let resumes = [];
 let activeResume = null;
 let selectedRegion = null;
@@ -36,14 +53,14 @@ clearRegionBtn.addEventListener("click", clearRegion);
 ["dragenter", "dragover"].forEach((eventName) => {
   dropZone.addEventListener(eventName, (event) => {
     event.preventDefault();
-    dropZone.classList.add("drag-over");
+    dropZone.classList.add(...dropActiveClasses);
   });
 });
 
 ["dragleave", "drop"].forEach((eventName) => {
   dropZone.addEventListener(eventName, (event) => {
     event.preventDefault();
-    dropZone.classList.remove("drag-over");
+    dropZone.classList.remove(...dropActiveClasses);
   });
 });
 
@@ -63,9 +80,9 @@ function renderFileList() {
   fileList.innerHTML = files
     .map(
       (file) => `
-        <div class="file-row">
-          <span>${file.name}</span>
-          <small>${formatFileSize(file.size)}</small>
+        <div class="flex justify-between gap-3 rounded-xl border border-slate-200 px-3 py-2.5">
+          <span class="truncate">${file.name}</span>
+          <small class="shrink-0 text-slate-500">${formatFileSize(file.size)}</small>
         </div>
       `
     )
@@ -112,10 +129,12 @@ async function handlePromptSubmit(event) {
 function showReviewPage() {
   uploadPage.classList.add("hidden");
   reviewPage.classList.remove("hidden");
+  reviewPage.classList.add("grid");
 }
 
 function showUploadPage() {
   reviewPage.classList.add("hidden");
+  reviewPage.classList.remove("grid");
   uploadPage.classList.remove("hidden");
 }
 
@@ -130,19 +149,19 @@ function renderCandidateList() {
   candidateList.innerHTML = resumes
     .map(
       (resume, index) => `
-        <button class="candidate-card ${resume.id === activeResume.id ? "active" : ""}" data-id="${resume.id}" type="button">
-          <span class="rank">#${index + 1}</span>
+        <button class="${cardBase} ${resume.id === activeResume.id ? cardActive : cardInactive}" data-id="${resume.id}" type="button">
+          <span class="grid h-9 w-9 place-items-center rounded-xl bg-blue-100 font-extrabold text-blue-700">#${index + 1}</span>
           <span>
-            <strong>${resume.name}</strong>
-            <small>${resume.title}</small>
+            <strong class="block">${resume.name}</strong>
+            <small class="block text-slate-500">${resume.title}</small>
           </span>
-          <b>${resume.scores.overall}</b>
+          <b class="text-slate-950">${resume.scores.overall}</b>
         </button>
       `
     )
     .join("");
 
-  document.querySelectorAll(".candidate-card").forEach((button) => {
+  candidateList.querySelectorAll("button").forEach((button) => {
     button.addEventListener("click", () => {
       activeResume = resumes.find((resume) => resume.id === button.dataset.id);
       clearRegion();
@@ -165,10 +184,12 @@ function renderActiveResume() {
   scoreGrid.innerHTML = scoreLabels
     .map(
       ([label, score]) => `
-        <div class="score-card">
-          <span>${label}</span>
-          <strong>${score}</strong>
-          <div class="meter"><i style="width: ${score}%"></i></div>
+        <div class="rounded-[18px] border border-slate-200 bg-white p-[18px] shadow-lift">
+          <span class="font-bold text-slate-500">${label}</span>
+          <strong class="my-2 block text-3xl font-black">${score}</strong>
+          <div class="h-2 overflow-hidden rounded-full bg-slate-200">
+            <i class="block h-full rounded-full bg-gradient-to-r from-blue-600 to-teal-500" style="width: ${score}%"></i>
+          </div>
         </div>
       `
     )
@@ -177,15 +198,15 @@ function renderActiveResume() {
   resumePreview.innerHTML = activeResume.sections
     .map(
       (section) => `
-        <button class="resume-section ${selectedRegion?.title === section.title ? "selected" : ""}" data-title="${section.title}" type="button">
-          <span>${section.title}</span>
-          <p>${section.text}</p>
+        <button class="${resumeSectionBase} ${selectedRegion?.title === section.title ? resumeSectionActive : resumeSectionInactive}" data-title="${section.title}" type="button">
+          <span class="font-black text-blue-700">${section.title}</span>
+          <p class="mt-2 leading-7 text-slate-700">${section.text}</p>
         </button>
       `
     )
     .join("");
 
-  document.querySelectorAll(".resume-section").forEach((sectionButton) => {
+  resumePreview.querySelectorAll("button").forEach((sectionButton) => {
     sectionButton.addEventListener("click", () => {
       selectedRegion = activeResume.sections.find(
         (section) => section.title === sectionButton.dataset.title
@@ -201,9 +222,9 @@ function renderInsights() {
     .slice(-4)
     .map(
       (message) => `
-        <div class="message ${message.role}">
-          <span>${message.role === "user" ? "You" : "LLM"}</span>
-          <p>${message.text}</p>
+        <div class="rounded-2xl border p-4 ${message.role === "user" ? "border-slate-300 bg-slate-50" : "border-blue-200 bg-blue-50"}">
+          <span class="mb-1.5 block text-xs font-black uppercase text-slate-500">${message.role === "user" ? "You" : "LLM"}</span>
+          <p class="leading-7 text-slate-700">${message.text}</p>
         </div>
       `
     )
@@ -213,9 +234,9 @@ function renderInsights() {
     ${activeResume.insights
       .map(
         (insight) => `
-          <div class="insight-item">
-            <span></span>
-            <p>${insight}</p>
+          <div class="grid grid-cols-[10px_1fr] gap-2.5 rounded-2xl border border-slate-200 bg-white p-4">
+            <span class="mt-1.5 h-2.5 w-2.5 rounded-full bg-gradient-to-br from-amber-600 to-teal-500"></span>
+            <p class="leading-7 text-slate-700">${insight}</p>
           </div>
         `
       )

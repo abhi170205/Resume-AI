@@ -4,65 +4,106 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Resume LLM Review UI</title>
-    <link rel="stylesheet" href="src/styles.css" />
+    <script>
+      window.tailwind = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Aptos", "Segoe UI", "Inter", "ui-sans-serif", "system-ui"]
+            },
+            colors: {
+              brand: {
+                blue: "#2563eb",
+                navy: "#101828",
+                teal: "#0f9f8e",
+                violet: "#7c3aed"
+              }
+            },
+            boxShadow: {
+              lift: "0 20px 50px rgba(16, 24, 40, 0.10)",
+              soft: "0 10px 28px rgba(16, 24, 40, 0.08)"
+            }
+          }
+        }
+      };
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body>
-    <main id="app">
-      <section id="uploadPage" class="page upload-page">
-        <nav class="topbar">
+  <body class="bg-[#f7f8fc] font-sans text-slate-950 antialiased">
+    <main
+      id="app"
+      class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.12),transparent_34rem),radial-gradient(circle_at_top_right,rgba(15,159,142,0.10),transparent_28rem)]"
+    >
+      <section id="uploadPage" class="min-h-screen">
+        <nav class="mx-auto flex w-[min(1180px,calc(100%-40px))] items-center justify-between gap-6 py-9 pb-5">
           <div>
-            <p class="eyebrow">HR Review Console</p>
-            <h1>Resume intelligence workspace</h1>
+            <p class="mb-2 text-xs font-black uppercase text-blue-600">HR Review Console</p>
+            <h1 class="max-w-3xl text-[clamp(38px,4.6vw,66px)] font-black leading-none text-slate-950">
+              Resume intelligence workspace
+            </h1>
           </div>
-          <span class="status-pill">LLM backend ready</span>
+          <span class="whitespace-nowrap rounded-full border border-blue-200 bg-white/80 px-4 py-3 font-extrabold text-blue-700 shadow-soft">
+            LLM backend ready
+          </span>
         </nav>
 
-        <section class="upload-layout">
-          <div class="intro-panel">
-            <h2>Upload resumes, score them, then ask sharper questions.</h2>
-            <p>
-              Built for recruiters who need fast ATS checks, LLM-backed resume review,
-              candidate comparison, and section-specific Q&A.
-            </p>
-            <div class="feature-grid">
-              <div>
-                <strong>ATS baseline</strong>
-                <span>Role fit, keyword coverage, structure, clarity.</span>
-              </div>
-              <div>
-                <strong>Region Q&A</strong>
-                <span>Click any resume block and ask about that exact part.</span>
-              </div>
-              <div>
-                <strong>Ranking view</strong>
-                <span>Compare candidates by skills, impact, seniority, and risk.</span>
+        <section class="mx-auto grid w-[min(1180px,calc(100%-40px))] grid-cols-[minmax(0,1.08fr)_minmax(360px,440px)] items-stretch gap-6 pb-14 pt-4 max-[980px]:grid-cols-1">
+          <div class="relative flex min-h-[590px] flex-col justify-between overflow-hidden rounded-[18px] border border-slate-200 bg-[linear-gradient(135deg,rgba(16,24,40,0.94),rgba(30,64,175,0.86)_46%,rgba(15,159,142,0.74)),linear-gradient(45deg,rgba(255,255,255,0.12)_25%,transparent_25%_50%,rgba(255,255,255,0.10)_50%_75%,transparent_75%)] bg-[length:cover,42px_42px] p-[clamp(30px,5vw,58px)] shadow-lift max-[980px]:min-h-0 max-[980px]:gap-20">
+            <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),transparent_38%),radial-gradient(circle_at_18%_18%,rgba(255,255,255,0.16),transparent_18rem)]"></div>
+            <div class="relative"></div>
+            <div class="relative">
+              <h2 class="max-w-[700px] text-[clamp(36px,4.2vw,58px)] font-black leading-none text-white">
+                Upload resumes, score them, then ask sharper questions.
+              </h2>
+              <p class="mt-5 max-w-[620px] text-lg leading-8 text-white/85">
+                Built for recruiters who need fast ATS checks, LLM-backed resume review,
+                candidate comparison, and section-specific Q&A.
+              </p>
+              <div class="mt-6 grid grid-cols-3 gap-3.5 max-[980px]:grid-cols-1">
+                <div class="rounded-2xl border border-white/20 bg-white/10 p-4 text-white backdrop-blur-xl">
+                  <strong class="block">ATS baseline</strong>
+                  <span class="mt-2 block text-sm leading-6 text-white/70">Role fit, keyword coverage, structure, clarity.</span>
+                </div>
+                <div class="rounded-2xl border border-white/20 bg-white/10 p-4 text-white backdrop-blur-xl">
+                  <strong class="block">Region Q&A</strong>
+                  <span class="mt-2 block text-sm leading-6 text-white/70">Click any resume block and ask about that exact part.</span>
+                </div>
+                <div class="rounded-2xl border border-white/20 bg-white/10 p-4 text-white backdrop-blur-xl">
+                  <strong class="block">Ranking view</strong>
+                  <span class="mt-2 block text-sm leading-6 text-white/70">Compare candidates by skills, impact, seniority, and risk.</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <form id="uploadForm" class="upload-card">
-            <label for="resumeInput" class="drop-zone" id="dropZone">
+          <form id="uploadForm" class="flex min-h-[590px] flex-col justify-center rounded-[18px] border border-slate-200 bg-white p-6 shadow-lift max-[980px]:min-h-0">
+            <label
+              for="resumeInput"
+              id="dropZone"
+              class="grid min-h-[250px] place-items-center gap-2.5 rounded-2xl border-2 border-dashed border-slate-300 bg-gradient-to-b from-blue-50 to-teal-50 p-8 text-center transition"
+            >
               <input
                 id="resumeInput"
+                class="pointer-events-none absolute opacity-0"
                 type="file"
                 multiple
                 accept=".pdf,.doc,.docx,.txt,.rtf,.odt"
               />
-              <span class="upload-icon">+</span>
+              <span class="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-br from-blue-600 to-teal-500 text-3xl leading-none text-white shadow-[0_14px_26px_rgba(37,99,235,0.28)]">+</span>
               <strong>Drop resumes here or browse files</strong>
-              <small>Supported: PDF, DOC, DOCX, TXT, RTF, ODT</small>
+              <small class="text-slate-500">Supported: PDF, DOC, DOCX, TXT, RTF, ODT</small>
             </label>
 
-            <div id="fileList" class="file-list" aria-live="polite"></div>
+            <div id="fileList" class="my-3.5 grid gap-2" aria-live="polite"></div>
 
-            <label class="field">
-              <span>Target role</span>
-              <input id="targetRole" type="text" value="Senior Frontend Engineer" />
+            <label class="mt-4 grid gap-2">
+              <span class="text-slate-500">Target role</span>
+              <input id="targetRole" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100" type="text" value="Senior Frontend Engineer" />
             </label>
 
-            <label class="field">
-              <span>Hiring priority</span>
-              <select id="priority">
+            <label class="mt-4 grid gap-2">
+              <span class="text-slate-500">Hiring priority</span>
+              <select id="priority" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100">
                 <option value="balanced">Balanced evaluation</option>
                 <option value="skills">Strongest skills match</option>
                 <option value="leadership">Leadership potential</option>
@@ -70,22 +111,24 @@
               </select>
             </label>
 
-            <button class="primary-btn" type="submit">Analyze resumes</button>
+            <button class="mt-5 w-full rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 px-4 py-3.5 font-extrabold text-white shadow-[0_16px_30px_rgba(37,99,235,0.26)] transition hover:-translate-y-0.5 hover:brightness-95 disabled:cursor-wait disabled:opacity-70" type="submit">
+              Analyze resumes
+            </button>
           </form>
         </section>
       </section>
 
-      <section id="reviewPage" class="page review-page hidden">
-        <aside class="sidebar">
+      <section id="reviewPage" class="hidden min-h-screen grid-cols-[336px_minmax(0,1fr)] pb-24 max-[980px]:grid-cols-1">
+        <aside class="sticky top-0 h-screen overflow-auto border-r border-slate-200 bg-gradient-to-b from-white/95 to-blue-50/90 p-6 max-[980px]:static max-[980px]:h-auto max-[980px]:border-b max-[980px]:border-r-0">
           <div>
-            <button id="backBtn" class="ghost-btn" type="button">Back</button>
-            <p class="eyebrow">Candidate Queue</p>
-            <h2>Resume ranking</h2>
+            <button id="backBtn" class="rounded-xl border border-slate-200 bg-white/90 px-4 py-3 font-extrabold text-slate-950 transition hover:-translate-y-0.5" type="button">Back</button>
+            <p class="mb-2 mt-5 text-xs font-black uppercase text-blue-600">Candidate Queue</p>
+            <h2 class="mb-5 text-3xl font-black leading-none text-slate-950">Resume ranking</h2>
           </div>
 
-          <label class="field">
-            <span>Rank by</span>
-            <select id="rankingMode">
+          <label class="mt-4 grid gap-2">
+            <span class="text-slate-500">Rank by</span>
+            <select id="rankingMode" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100">
               <option value="overall">Best overall</option>
               <option value="ats">ATS score</option>
               <option value="skills">Skills match</option>
@@ -95,63 +138,64 @@
             </select>
           </label>
 
-          <div id="candidateList" class="candidate-list"></div>
+          <div id="candidateList" class="mt-5 grid gap-2.5"></div>
         </aside>
 
-        <section class="workspace">
-          <header class="workspace-header">
+        <section class="p-7 max-[640px]:px-4">
+          <header class="mb-5 flex items-center justify-between gap-5 max-[640px]:flex-col max-[640px]:items-stretch">
             <div>
-              <p class="eyebrow">Resume Analysis</p>
-              <h1 id="candidateName">Candidate</h1>
+              <p class="mb-2 text-xs font-black uppercase text-blue-600">Resume Analysis</p>
+              <h1 id="candidateName" class="text-[clamp(30px,3.6vw,46px)] font-black leading-none text-slate-950">Candidate</h1>
             </div>
-            <div class="score-ring" aria-label="ATS score">
-              <span id="atsScore">0</span>
-              <small>ATS</small>
+            <div class="grid h-24 w-24 place-items-center rounded-full border-8 border-transparent bg-[linear-gradient(white,white)_padding-box,linear-gradient(135deg,#2563eb,#0f9f8e)_border-box] shadow-soft" aria-label="ATS score">
+              <span id="atsScore" class="text-3xl font-black">0</span>
+              <small class="-mt-4 font-extrabold text-slate-500">ATS</small>
             </div>
           </header>
 
-          <section class="score-grid" id="scoreGrid"></section>
+          <section class="mb-5 grid grid-cols-4 gap-3.5 max-[980px]:grid-cols-1" id="scoreGrid"></section>
 
-          <section class="review-split">
-            <article class="resume-panel">
-              <div class="panel-header">
+          <section class="grid grid-cols-[minmax(0,1.18fr)_minmax(340px,0.82fr)] gap-5 max-[980px]:grid-cols-1">
+            <article class="min-h-[520px] rounded-[18px] border border-slate-200 bg-white p-5 shadow-lift">
+              <div class="mb-4 flex items-start justify-between gap-4 max-[640px]:flex-col max-[640px]:items-stretch">
                 <div>
-                  <h2>Resume preview</h2>
-                  <p>Click any section to focus the prompt on that region.</p>
+                  <h2 class="mb-1 text-2xl font-black">Resume preview</h2>
+                  <p class="text-slate-500">Click any section to focus the prompt on that region.</p>
                 </div>
-                <button id="clearRegionBtn" class="ghost-btn" type="button">Clear region</button>
+                <button id="clearRegionBtn" class="rounded-xl border border-slate-200 bg-white/90 px-4 py-3 font-extrabold text-slate-950 transition hover:-translate-y-0.5" type="button">Clear region</button>
               </div>
-              <div id="resumePreview" class="resume-preview"></div>
+              <div id="resumePreview" class="grid gap-3"></div>
             </article>
 
-            <article class="insights-panel">
-              <div class="panel-header">
+            <article class="min-h-[520px] rounded-[18px] border border-slate-200 bg-white p-5 shadow-lift">
+              <div class="mb-4 flex items-start justify-between gap-4">
                 <div>
-                  <h2>LLM review</h2>
-                  <p>Backend-ready summary for shortlist decisions.</p>
+                  <h2 class="mb-1 text-2xl font-black">LLM review</h2>
+                  <p class="text-slate-500">Backend-ready summary for shortlist decisions.</p>
                 </div>
               </div>
-              <div id="llmInsights" class="insight-list"></div>
+              <div id="llmInsights" class="grid gap-3"></div>
 
-              <div class="selected-region">
-                <span>Selected region</span>
-                <strong id="selectedRegionLabel">None selected</strong>
-                <p id="selectedRegionText">Click a section in the resume to ask about that exact content.</p>
+              <div class="mt-4 rounded-[18px] border border-slate-200 bg-gradient-to-b from-blue-50 to-white p-4">
+                <span class="text-slate-500">Selected region</span>
+                <strong id="selectedRegionLabel" class="mb-2 mt-1 block">None selected</strong>
+                <p id="selectedRegionText" class="leading-7 text-slate-700">Click a section in the resume to ask about that exact content.</p>
               </div>
             </article>
           </section>
         </section>
 
-        <form id="promptBar" class="prompt-bar">
-          <div class="prompt-context">
+        <form id="promptBar" class="fixed bottom-0 left-[336px] right-0 grid grid-cols-[auto_minmax(0,1fr)_120px] items-center gap-3 border-t border-slate-200 bg-white/90 px-7 py-4 backdrop-blur-xl max-[980px]:left-0 max-[980px]:grid-cols-1">
+          <div class="whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3.5 py-3 font-extrabold text-blue-700">
             <span id="promptScope">Scope: full resume</span>
           </div>
           <input
             id="promptInput"
+            class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
             type="text"
             placeholder="Ask the LLM about shortlist fit, missing skills, risk, or the selected resume region..."
           />
-          <button class="primary-btn" type="submit">Ask</button>
+          <button class="m-0 w-auto rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 px-4 py-3.5 font-extrabold text-white shadow-[0_16px_30px_rgba(37,99,235,0.26)] transition hover:-translate-y-0.5 hover:brightness-95" type="submit">Ask</button>
         </form>
       </section>
     </main>

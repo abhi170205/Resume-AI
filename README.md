@@ -4,6 +4,7 @@ A ready-to-use frontend prototype for an HR resume builder/reviewer. It supports
 
 ## What is included
 
+- Tailwind CSS frontend using the CDN build for quick handoff and easy backend stitching.
 - Landing upload page with supported formats: PDF, DOC, DOCX, TXT, RTF, ODT.
 - Review workspace after upload with base ATS score.
 - Resume preview with clickable text regions.
