@@ -62,7 +62,7 @@ async function signUpWithBackend({ details, onSignedIn, onError }) {
       throw new Error("Passwords do not match.");
     }
 
-    const response = await fetch("/api/auth/signup", {
+    const response = await fetch("http://localhost:8000/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
