@@ -1,26 +1,21 @@
 # Resume LLM Review UI
 
-A ready-to-use frontend prototype for an HR resume builder/reviewer. It supports resume uploads, ATS score preview, LLM-style review panels, region-specific prompting on resume content, bottom Q&A chat, and resume ranking by hiring parameters.
+Backend-ready Tailwind frontend for a multi-company HR resume review product. It supports company login/signup, private company-scoped sessions, resume upload, ATS scoring, LLM review, region-specific Q&A, and resume ranking.
 
-## What is included
+## What Is Included
 
-- Tailwind CSS frontend using the CDN build for quick handoff and easy backend stitching.
-- Google sign-in auth structure for HR users.
-- Company-scoped auth context so backend/API calls include the signed-in company ID.
-- Firestore security rules example that blocks cross-company database access.
-- Landing upload page with supported formats: PDF, DOC, DOCX, TXT, RTF, ODT.
-- Review workspace after upload with base ATS score.
-- Resume preview with clickable text regions.
-- Region selector inspired by circle-to-search: click a resume block and ask about only that section.
-- Bottom prompt area for Q&A with the LLM backend.
-- Resume ranking mode with weighted score parameters.
-- Backend adapter file at `src/api.js` where your friend can connect real endpoints.
+- Tailwind CSS frontend using the CDN build for quick handoff.
+- Company login and workspace signup screens.
+- Company-scoped auth context for all backend calls.
+- Real API integration layer in `src/api.js`.
+- Central endpoint config in `src/config.js`.
+- Firestore security rules example for company-isolated data.
+- Upload support for PDF, DOC, DOCX, TXT, RTF, and ODT.
+- Resume preview with clickable section selection.
+- Bottom prompt bar for LLM Q&A.
+- Ranking selector with score parameters.
 
-## Run locally
-
-Open `index.html` directly in a browser.
-
-Or run a local static server:
+## Run Locally
 
 ```bash
 npm run dev
@@ -28,52 +23,146 @@ npm run dev
 
 Then open `http://localhost:4173`.
 
-## Push to GitHub
+To point the frontend at a different backend, define this before `src/app.js` in `index.html` or in a small config script:
 
-```bash
-git init
-git add .
-git commit -m "Add resume LLM review frontend"
-git branch -M main
-git remote add origin <your-github-repo-url>
-git push -u origin main
+```js
+window.RESUME_AI_API_BASE_URL = "http://localhost:8000";
 ```
 
-## Backend stitching points
+## Expected Backend Endpoints
 
-Edit `src/api.js` and replace the mock functions:
-
-- `analyzeResume(files)`
-- `askResumeQuestion({ question, selectedRegion, activeResume })`
-- `rankResumes(resumes, rankingMode)`
-
-Suggested backend endpoints:
-
+- `POST /api/auth/login`
+- `POST /api/auth/signup`
+- `POST /api/auth/logout`
 - `POST /api/resumes/analyze`
 - `POST /api/resumes/ask`
 - `POST /api/resumes/rank`
 
-The UI already passes selected resume region details, active resume data, ranking mode, and uploaded files.
+All protected endpoints receive:
 
-## Company auth setup
+```http
+Authorization: Bearer <accessToken>
+```
 
-The app includes `src/auth.js` for Google sign-in. In local mode it creates a demo HR session. For production:
+The backend must validate the token and enforce company isolation server-side. Do not trust a company ID chosen in the browser.
 
-1. Copy `src/firebase-config.example.js` to `src/firebase-config.js`.
-2. Fill it with your Firebase web app config.
-3. Load it before `src/app.js` in `index.html`.
-4. Set a verified custom claim on each HR user:
+## Auth Contracts
+
+`POST /api/auth/login`
 
 ```json
 {
-  "companyId": "company-slug",
-  "companyName": "Company Name"
+  "username": "hr@company.com",
+  "password": "password"
 }
 ```
 
-Do not trust a company ID selected in the browser. The backend or Firebase Admin SDK must set the claim after verifying the HR user's company membership.
+`POST /api/auth/signup`
 
-The included `firestore.rules` expects company data to live under:
+```json
+{
+  "companyName": "Company Name",
+  "username": "hr@company.com",
+  "password": "password"
+}
+```
+
+Both auth endpoints should return:
+
+```json
+{
+  "accessToken": "backend-issued-jwt-or-session-token",
+  "user": {
+    "id": "user-id",
+    "email": "hr@company.com",
+    "name": "HR User"
+  },
+  "company": {
+    "id": "company-id",
+    "name": "Company Name"
+  }
+}
+```
+
+For compatibility, the frontend also accepts older flat fields like `idToken`, `companyId`, and `companyName`, but the structured shape above is preferred.
+
+## Resume Contracts
+
+`POST /api/resumes/analyze`
+
+Request: `multipart/form-data`
+
+- `resumes`: one or more files
+- `targetRole`: string
+- `priority`: `balanced`, `skills`, `leadership`, or `risk`
+
+Response:
+
+```json
+{
+  "resumes": [
+    {
+      "id": "resume-id",
+      "name": "Candidate Name",
+      "title": "Senior Frontend Engineer",
+      "ats": 88,
+      "scores": {
+        "overall": 91,
+        "ats": 88,
+        "skills": 94,
+        "experience": 90,
+        "impact": 89,
+        "risk": 82
+      },
+      "insights": ["Shortlist-ready LLM summary"],
+      "sections": [
+        {
+          "id": "section-id",
+          "title": "Experience",
+          "text": "Parsed resume section text"
+        }
+      ]
+    }
+  ]
+}
+```
+
+`POST /api/resumes/ask`
+
+```json
+{
+  "resumeId": "resume-id",
+  "question": "What is the hiring risk?",
+  "selectedRegion": {
+    "sectionId": "section-id",
+    "title": "Experience",
+    "text": "Selected resume text"
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "answer": "LLM answer scoped to the selected region or full resume."
+}
+```
+
+`POST /api/resumes/rank`
+
+```json
+{
+  "rankingMode": "overall",
+  "resumeIds": ["resume-id-1", "resume-id-2"]
+}
+```
+
+Response: same `resumes` array shape as `/api/resumes/analyze`, sorted by backend ranking.
+
+## Privacy Model
+
+The included `firestore.rules` expects data under:
 
 ```text
 companies/{companyId}/resumes/{resumeId}
@@ -81,4 +170,4 @@ companies/{companyId}/resumeAnalyses/{analysisId}
 companies/{companyId}/shortlists/{shortlistId}
 ```
 
-Only users whose token has the matching `companyId` claim can read or write that company's documents.
+Only users whose verified token has the matching `companyId` should be able to read or write that company’s documents.

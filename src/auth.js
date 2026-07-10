@@ -1,3 +1,5 @@
+import { appConfig } from "./config.js";
+
 const SESSION_KEY = "resume-ai-auth-session";
 
 let authContext = null;
@@ -15,7 +17,7 @@ export async function initializeAuth({ onSignedIn, onSignedOut, onError }) {
   return {
     signIn: (credentials) => signInWithPassword({ credentials, onSignedIn, onError }),
     signUp: (details) => signUpWithBackend({ details, onSignedIn, onError }),
-    signOut: () => signOut({ onSignedOut })
+    signOut: () => signOut({ onSignedOut, onError })
   };
 }
 
@@ -28,29 +30,40 @@ export function getAuthContext() {
 }
 
 export function getCompanyId() {
-  return getAuthContext().companyId;
+  return getAuthContext().company.id;
 }
 
 export async function companyScopedFetch(path, options = {}) {
   const context = getAuthContext();
   const headers = new Headers(options.headers || {});
 
-  headers.set("Authorization", `Bearer ${context.idToken}`);
-  headers.set("X-Company-ID", context.companyId);
+  headers.set("Authorization", `Bearer ${context.accessToken}`);
 
-  return fetch(path, {
+  if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  const response = await fetch(toApiUrl(path), {
     ...options,
     headers
   });
+
+  if (response.status === 401 || response.status === 403) {
+    clearSession();
+  }
+
+  return response;
 }
 
 async function signInWithPassword({ credentials, onSignedIn, onError }) {
   try {
-    const context = await loginWithBackend(credentials);
+    const session = await postAuth(appConfig.endpoints.login, {
+      username: credentials.username,
+      password: credentials.password
+    });
 
-    authContext = context;
-    localStorage.setItem(SESSION_KEY, JSON.stringify(context));
-    onSignedIn(context);
+    setSession(session);
+    onSignedIn(authContext);
   } catch (error) {
     onError(error);
   }
@@ -62,79 +75,99 @@ async function signUpWithBackend({ details, onSignedIn, onError }) {
       throw new Error("Passwords do not match.");
     }
 
-    const response = await fetch("http://localhost:8000/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        companyName: details.companyName,
-        username: details.username,
-        password: details.password
-      })
+    const session = await postAuth(appConfig.endpoints.signup, {
+      companyName: details.companyName,
+      username: details.username,
+      password: details.password
     });
 
-    if (!response.ok) {
-      const errorBody = await response.json().catch(() => ({}));
-      throw new Error(errorBody.message || "Could not create workspace. Please try again.");
-    }
-
-    const data = await response.json();
-    const context = toAuthContext(data, details.username);
-
-    authContext = context;
-    localStorage.setItem(SESSION_KEY, JSON.stringify(context));
-    onSignedIn(context);
+    setSession(session);
+    onSignedIn(authContext);
   } catch (error) {
     onError(error);
+    throw error;
   }
 }
 
-async function signOut({ onSignedOut }) {
-  authContext = null;
-  localStorage.removeItem(SESSION_KEY);
-  onSignedOut();
+async function signOut({ onSignedOut, onError }) {
+  try {
+    if (authContext?.accessToken) {
+      await companyScopedFetch(appConfig.endpoints.logout, { method: "POST" }).catch(() => {});
+    }
+  } catch (error) {
+    onError(error);
+  } finally {
+    clearSession();
+    onSignedOut();
+  }
 }
 
-async function loginWithBackend({ username, password }) {
-  if (!username || !password) {
-    throw new Error("Username and password are required.");
-  }
-
-  const response = await fetch("/api/auth/login", {
+async function postAuth(path, body) {
+  const response = await fetch(toApiUrl(path), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password })
+    body: JSON.stringify(body)
   });
 
-  if (!response.ok) {
-    const errorBody = await response.json().catch(() => ({}));
-    throw new Error(errorBody.message || "Invalid username or password.");
-  }
-
-  const data = await response.json();
-  return toAuthContext(data, username);
+  const payload = await parseJsonResponse(response, "Authentication failed.");
+  return normalizeSession(payload, body.username);
 }
 
-function toAuthContext(data, fallbackUsername) {
-  if (!data.companyId) {
-    throw new Error("This account is not assigned to a company workspace.");
+function normalizeSession(payload, fallbackUsername) {
+  const session = {
+    accessToken: payload.accessToken || payload.idToken || payload.token,
+    user: payload.user || {
+      id: payload.uid || payload.userId,
+      name: payload.name || "HR user",
+      email: payload.email || fallbackUsername
+    },
+    company: payload.company || {
+      id: payload.companyId,
+      name: payload.companyName || payload.companyId
+    }
+  };
+
+  assertValidSession(session);
+  return session;
+}
+
+function setSession(session) {
+  authContext = session;
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+}
+
+function assertValidSession(session) {
+  if (!session?.accessToken || !session?.user?.email || !session?.company?.id) {
+    throw new Error("Backend auth response must include accessToken, user.email, and company.id.");
+  }
+}
+
+async function parseJsonResponse(response, fallbackMessage) {
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new Error(payload?.message || fallbackMessage);
   }
 
-  return {
-    uid: data.uid,
-    name: data.name || "HR user",
-    email: data.email || fallbackUsername,
-    companyId: data.companyId,
-    companyName: data.companyName || data.companyId,
-    idToken: data.idToken,
-    authProvider: "username-password"
-  };
+  return payload;
 }
 
 function readSavedSession() {
   try {
-    return JSON.parse(localStorage.getItem(SESSION_KEY));
+    const session = JSON.parse(localStorage.getItem(SESSION_KEY));
+    assertValidSession(session);
+    return session;
   } catch {
-    localStorage.removeItem(SESSION_KEY);
+    clearSession();
     return null;
   }
+}
+
+function clearSession() {
+  authContext = null;
+  localStorage.removeItem(SESSION_KEY);
+}
+
+function toApiUrl(path) {
+  return new URL(path, appConfig.apiBaseUrl).toString();
 }

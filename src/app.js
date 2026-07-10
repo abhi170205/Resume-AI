@@ -17,12 +17,15 @@ const signupConfirmPasswordInput = document.querySelector("#signupConfirmPasswor
 const signOutBtn = document.querySelector("#signOutBtn");
 const authError = document.querySelector("#authError");
 const signupError = document.querySelector("#signupError");
+const appError = document.querySelector("#appError");
 const companyBadge = document.querySelector("#companyBadge");
 const uploadPage = document.querySelector("#uploadPage");
 const reviewPage = document.querySelector("#reviewPage");
 const uploadForm = document.querySelector("#uploadForm");
 const resumeInput = document.querySelector("#resumeInput");
 const fileList = document.querySelector("#fileList");
+const targetRole = document.querySelector("#targetRole");
+const priority = document.querySelector("#priority");
 const candidateList = document.querySelector("#candidateList");
 const rankingMode = document.querySelector("#rankingMode");
 const candidateName = document.querySelector("#candidateName");
@@ -60,9 +63,8 @@ let resumes = [];
 let activeResume = null;
 let selectedRegion = null;
 let messages = [];
-let authControls = null;
 
-authControls = await initializeAuth({
+const authControls = await initializeAuth({
   onSignedIn: showAppForCompany,
   onSignedOut: showAuthGate,
   onError: showAuthError
@@ -80,23 +82,28 @@ loginForm.addEventListener("submit", (event) => {
 signupForm.addEventListener("submit", (event) => {
   event.preventDefault();
   signupError.classList.add("hidden");
-  authControls.signUp({
-    companyName: signupCompanyName.value.trim(),
-    username: signupUsernameInput.value.trim(),
-    password: signupPasswordInput.value,
-    confirmPassword: signupConfirmPasswordInput.value
-  }).catch((error) => showSignupError(error));
+  authControls
+    .signUp({
+      companyName: signupCompanyName.value.trim(),
+      username: signupUsernameInput.value.trim(),
+      password: signupPasswordInput.value,
+      confirmPassword: signupConfirmPasswordInput.value
+    })
+    .catch((error) => showSignupError(error));
 });
 
 showSignupBtn.addEventListener("click", () => {
   authGate.classList.add("hidden");
   signupGate.classList.remove("hidden");
+  signupGate.classList.add("grid");
   signupError.classList.add("hidden");
 });
 
 showLoginBtn.addEventListener("click", () => {
   signupGate.classList.add("hidden");
+  signupGate.classList.remove("grid");
   authGate.classList.remove("hidden");
+  authGate.classList.add("grid");
   authError.classList.add("hidden");
 });
 
@@ -153,21 +160,37 @@ function renderFileList() {
 async function handleUpload(event) {
   event.preventDefault();
   const files = [...resumeInput.files];
-  setLoading(uploadForm, true);
-  resumes = await analyzeResume(files);
-  setLoading(uploadForm, false);
-  activeResume = resumes[0];
-  selectedRegion = null;
-  messages = [];
-  showReviewPage();
-  await renderAll();
+
+  try {
+    hideAppError();
+    setLoading(uploadForm, true);
+    resumes = await analyzeResume(files, {
+      targetRole: targetRole.value.trim(),
+      priority: priority.value
+    });
+
+    activeResume = resumes[0];
+    selectedRegion = null;
+    messages = [];
+    showReviewPage();
+    await renderAll();
+  } catch (error) {
+    showAppError(error);
+  } finally {
+    setLoading(uploadForm, false);
+  }
 }
 
 async function handleRankingChange() {
-  resumes = await rankResumes(resumes, rankingMode.value);
-  activeResume = resumes[0];
-  clearRegion();
-  renderAll();
+  try {
+    hideAppError();
+    resumes = await rankResumes(resumes, rankingMode.value);
+    activeResume = resumes[0];
+    clearRegion();
+    renderAll();
+  } catch (error) {
+    showAppError(error);
+  }
 }
 
 async function handlePromptSubmit(event) {
@@ -180,11 +203,18 @@ async function handlePromptSubmit(event) {
   promptInput.value = "";
   promptInput.placeholder = "Thinking with the selected context...";
 
-  const answer = await askResumeQuestion({ question, selectedRegion, activeResume });
-  messages.push(answer);
-
-  promptInput.placeholder = "Ask another question about this resume...";
-  renderInsights();
+  try {
+    const answer = await askResumeQuestion({ question, selectedRegion, activeResume });
+    messages.push(answer);
+  } catch (error) {
+    messages.push({
+      role: "assistant",
+      text: error.message || "The backend could not answer this question."
+    });
+  } finally {
+    promptInput.placeholder = "Ask another question about this resume...";
+    renderInsights();
+  }
 }
 
 function showReviewPage() {
@@ -202,15 +232,18 @@ function showUploadPage() {
 function showAppForCompany(context) {
   authGate.classList.add("hidden");
   signupGate.classList.add("hidden");
+  signupGate.classList.remove("grid");
   app.classList.remove("hidden");
-  companyBadge.textContent = context.companyName || context.companyId;
+  companyBadge.textContent = context.company.name || context.company.id;
   companyBadge.classList.remove("hidden");
 }
 
 function showAuthGate() {
   app.classList.add("hidden");
   signupGate.classList.add("hidden");
+  signupGate.classList.remove("grid");
   authGate.classList.remove("hidden");
+  authGate.classList.add("grid");
   companyBadge.classList.add("hidden");
   loginForm.reset();
   signupForm.reset();
@@ -225,6 +258,16 @@ function showAuthError(error) {
 function showSignupError(error) {
   signupError.textContent = error.message || "Could not create workspace. Please try again.";
   signupError.classList.remove("hidden");
+}
+
+function showAppError(error) {
+  appError.textContent = error.message || "The backend request failed.";
+  appError.classList.remove("hidden");
+}
+
+function hideAppError() {
+  appError.classList.add("hidden");
+  appError.textContent = "";
 }
 
 function renderAll() {
