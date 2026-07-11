@@ -300,7 +300,7 @@
             <div id="appError" class="hidden rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700"></div>
 
             <label class="mt-4 grid gap-2">
-              <span class="text-slate-500">Target role</span>
+              <span class="text-slate-500">Job Description</span>
               <input id="targetRole" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100" type="text" value="Senior Frontend Engineer" />
             </label>
 
@@ -317,6 +317,9 @@
             <button class="mt-5 w-full rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 px-4 py-3.5 font-extrabold text-white shadow-[0_16px_30px_rgba(37,99,235,0.26)] transition hover:-translate-y-0.5 hover:brightness-95 disabled:cursor-wait disabled:opacity-70" type="submit">
               Analyze resumes
             </button>
+            <button id="reanalyzeBtn" class="mt-3 w-full rounded-xl border border-slate-200 bg-white px-4 py-3.5 font-extrabold text-slate-950 shadow-soft transition hover:-translate-y-0.5 hover:border-blue-300" type="button">
+              Re-analyze existing resumes
+            </button>
           </form>
         </section>
       </section>
@@ -332,12 +335,12 @@
           <label class="mt-4 grid gap-2">
             <span class="text-slate-500">Rank by</span>
             <select id="rankingMode" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-slate-950 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100">
-              <option value="overall">Best overall</option>
+              <option value="overall">Select ranking mode</option>
               <option value="ats">ATS score</option>
               <option value="skills">Skills match</option>
               <option value="experience">Relevant experience</option>
               <option value="impact">Measurable impact</option>
-              <option value="risk">Lowest risk</option>
+              <option value="risk">Highest risk</option>
             </select>
           </label>
 

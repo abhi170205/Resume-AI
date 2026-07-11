@@ -19,10 +19,10 @@ export async function analyzeResume(files, { targetRole, priority }) {
   const payload = await parseJsonResponse(response, "Resume analysis failed.");
   return normalizeResumeList(payload.resumes || payload);
 }
-
 export async function askResumeQuestion({ question, selectedRegion, activeResume }) {
   const response = await companyScopedFetch(appConfig.endpoints.askResume, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       resumeId: activeResume.id,
       question,
@@ -88,4 +88,21 @@ function normalizeResumeList(resumes) {
     insights: Array.isArray(resume.insights) ? resume.insights : [],
     sections: Array.isArray(resume.sections) ? resume.sections : []
   }));
+}
+
+export async function listExistingResumes() {
+  const response = await companyScopedFetch(appConfig.endpoints.listResumes, {
+    method: "GET"
+  });
+  return parseJsonResponse(response, "Could not load existing resumes.");
+}
+
+export async function reanalyzeResumes(resumeIds, { targetRole, priority }) {
+  const response = await companyScopedFetch(appConfig.endpoints.reanalyzeResumes, {
+    method: "POST",
+    body: JSON.stringify({ resumeIds, targetRole, priority })
+  });
+
+  const payload = await parseJsonResponse(response, "Re-analysis failed.");
+  return normalizeResumeList(payload.resumes || payload);
 }

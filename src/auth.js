@@ -38,23 +38,14 @@ export async function companyScopedFetch(path, options = {}) {
   const headers = new Headers(options.headers || {});
 
   headers.set("Authorization", `Bearer ${context.accessToken}`);
+  headers.set("X-Company-ID", context.companyId);
 
   if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
 
-  const response = await fetch(toApiUrl(path), {
-    ...options,
-    headers
-  });
-
-  if (response.status === 401 || response.status === 403) {
-    clearSession();
-  }
-
-  return response;
+  return fetch(`${appConfig.apiBaseUrl}${path}`, { ...options, headers });
 }
-
 async function signInWithPassword({ credentials, onSignedIn, onError }) {
   try {
     const session = await postAuth(appConfig.endpoints.login, {

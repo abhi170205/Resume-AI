@@ -5,6 +5,8 @@ export const appConfig = {
     signup: "/api/auth/signup",
     logout: "/api/auth/logout",
     analyzeResumes: "/api/resumes/analyze",
+    listResumes: "/api/resumes",
+    reanalyzeResumes: "/api/resumes/reanalyze",
     askResume: "/api/resumes/ask",
     rankResumes: "/api/resumes/rank"
   }

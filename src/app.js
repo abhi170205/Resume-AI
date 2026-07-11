@@ -1,4 +1,4 @@
-import { analyzeResume, askResumeQuestion, rankResumes } from "./api.js";
+import { analyzeResume, askResumeQuestion, rankResumes, listExistingResumes, reanalyzeResumes } from "./api.js";
 import { initializeAuth } from "./auth.js";
 
 const app = document.querySelector("#app");
@@ -21,6 +21,7 @@ const appError = document.querySelector("#appError");
 const companyBadge = document.querySelector("#companyBadge");
 const uploadPage = document.querySelector("#uploadPage");
 const reviewPage = document.querySelector("#reviewPage");
+const reanalyzeBtn = document.querySelector("#reanalyzeBtn");
 const uploadForm = document.querySelector("#uploadForm");
 const resumeInput = document.querySelector("#resumeInput");
 const fileList = document.querySelector("#fileList");
@@ -62,7 +63,9 @@ const resumeSectionInactive = "border-slate-200";
 let resumes = [];
 let activeResume = null;
 let selectedRegion = null;
-let messages = [];
+// Conversation history keyed by resume id, so switching candidates doesn't
+// leak one candidate's chat into another's LLM review panel.
+let messagesByResume = {};
 
 const authControls = await initializeAuth({
   onSignedIn: showAppForCompany,
@@ -117,6 +120,7 @@ rankingMode.addEventListener("change", handleRankingChange);
 promptBar.addEventListener("submit", handlePromptSubmit);
 backBtn.addEventListener("click", showUploadPage);
 clearRegionBtn.addEventListener("click", clearRegion);
+reanalyzeBtn.addEventListener("click", handleReanalyzeExisting);
 
 ["dragenter", "dragover"].forEach((eventName) => {
   dropZone.addEventListener(eventName, (event) => {
@@ -171,7 +175,7 @@ async function handleUpload(event) {
 
     activeResume = resumes[0];
     selectedRegion = null;
-    messages = [];
+    messagesByResume = {};
     showReviewPage();
     await renderAll();
   } catch (error) {
@@ -199,15 +203,20 @@ async function handlePromptSubmit(event) {
 
   if (!question || !activeResume) return;
 
-  messages.push({ role: "user", text: question });
+  const resumeId = activeResume.id;
+  if (!messagesByResume[resumeId]) {
+    messagesByResume[resumeId] = [];
+  }
+
+  messagesByResume[resumeId].push({ role: "user", text: question });
   promptInput.value = "";
   promptInput.placeholder = "Thinking with the selected context...";
 
   try {
     const answer = await askResumeQuestion({ question, selectedRegion, activeResume });
-    messages.push(answer);
+    messagesByResume[resumeId].push(answer);
   } catch (error) {
-    messages.push({
+    messagesByResume[resumeId].push({
       role: "assistant",
       text: error.message || "The backend could not answer this question."
     });
@@ -350,6 +359,9 @@ function renderActiveResume() {
 }
 
 function renderInsights() {
+  const resumeId = activeResume.id;
+  const messages = messagesByResume[resumeId] || [];
+
   const conversation = messages
     .slice(-4)
     .map(
@@ -404,4 +416,33 @@ function setLoading(form, isLoading) {
 function formatFileSize(size) {
   if (!size) return "0 KB";
   return `${Math.max(1, Math.round(size / 1024))} KB`;
+}
+
+
+async function handleReanalyzeExisting() {
+  try {
+    hideAppError();
+    setLoading(uploadForm, true);
+
+    const existing = await listExistingResumes();
+    if (!existing.length) {
+      showAppError(new Error("No previously uploaded resumes found for this company yet."));
+      return;
+    }
+
+    resumes = await reanalyzeResumes(
+      existing.map((r) => r.id),
+      { targetRole: targetRole.value.trim(), priority: priority.value }
+    );
+
+    activeResume = resumes[0];
+    selectedRegion = null;
+    messagesByResume = {};
+    showReviewPage();
+    await renderAll();
+  } catch (error) {
+    showAppError(error);
+  } finally {
+    setLoading(uploadForm, false);
+  }
 }
