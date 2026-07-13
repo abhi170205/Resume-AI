@@ -67,6 +67,42 @@ let selectedRegion = null;
 // leak one candidate's chat into another's LLM review panel.
 let messagesByResume = {};
 
+// --- Input validation / sanitization -------------------------------------
+// This is a first-line UX filter only. It is NOT the real security
+// boundary -- anyone can bypass this by calling the API directly, so the
+// backend independently re-validates everything below. Its purpose here
+// is to catch obvious junk/mistakes before a round-trip and give the user
+// immediate feedback.
+
+const MAX_QUESTION_LENGTH = 500;
+const MAX_ROLE_LENGTH = 200;
+
+const SUSPICIOUS_PATTERNS = [
+  /\$where/i,
+  /\$ne\b/i,
+  /\$gt\b/i,
+  /\$regex/i,
+  /<script/i,
+  /javascript:/i,
+  /on\w+\s*=/i // inline event handlers like onerror=, onload=
+];
+
+function validateTextInput(value, { maxLength, fieldName }) {
+  const trimmed = (value || "").trim();
+
+  if (!trimmed) {
+    throw new Error(`${fieldName} cannot be empty.`);
+  }
+  if (trimmed.length > maxLength) {
+    throw new Error(`${fieldName} must be under ${maxLength} characters.`);
+  }
+  if (SUSPICIOUS_PATTERNS.some((pattern) => pattern.test(trimmed))) {
+    throw new Error(`${fieldName} contains characters that aren't allowed.`);
+  }
+
+  return trimmed;
+}
+
 const authControls = await initializeAuth({
   onSignedIn: showAppForCompany,
   onSignedOut: showAuthGate,
@@ -165,11 +201,27 @@ async function handleUpload(event) {
   event.preventDefault();
   const files = [...resumeInput.files];
 
+  let validatedTargetRole;
   try {
     hideAppError();
+    validatedTargetRole = validateTextInput(targetRole.value, {
+      maxLength: MAX_ROLE_LENGTH,
+      fieldName: "Job description"
+    });
+  } catch (error) {
+    showAppError(error);
+    return;
+  }
+
+  if (!files.length) {
+    showAppError(new Error("Upload at least one resume before analysis."));
+    return;
+  }
+
+  try {
     setLoading(uploadForm, true);
     resumes = await analyzeResume(files, {
-      targetRole: targetRole.value.trim(),
+      targetRole: validatedTargetRole,
       priority: priority.value
     });
 
@@ -199,9 +251,21 @@ async function handleRankingChange() {
 
 async function handlePromptSubmit(event) {
   event.preventDefault();
-  const question = promptInput.value.trim();
 
-  if (!question || !activeResume) return;
+  let question;
+  try {
+    question = validateTextInput(promptInput.value, {
+      maxLength: MAX_QUESTION_LENGTH,
+      fieldName: "Question"
+    });
+  } catch (error) {
+    showAppError(error);
+    return;
+  }
+
+  if (!activeResume) return;
+
+  hideAppError();
 
   const resumeId = activeResume.id;
   if (!messagesByResume[resumeId]) {
@@ -418,10 +482,20 @@ function formatFileSize(size) {
   return `${Math.max(1, Math.round(size / 1024))} KB`;
 }
 
-
 async function handleReanalyzeExisting() {
+  let validatedTargetRole;
   try {
     hideAppError();
+    validatedTargetRole = validateTextInput(targetRole.value, {
+      maxLength: MAX_ROLE_LENGTH,
+      fieldName: "Job description"
+    });
+  } catch (error) {
+    showAppError(error);
+    return;
+  }
+
+  try {
     setLoading(uploadForm, true);
 
     const existing = await listExistingResumes();
@@ -432,7 +506,7 @@ async function handleReanalyzeExisting() {
 
     resumes = await reanalyzeResumes(
       existing.map((r) => r.id),
-      { targetRole: targetRole.value.trim(), priority: priority.value }
+      { targetRole: validatedTargetRole, priority: priority.value }
     );
 
     activeResume = resumes[0];
